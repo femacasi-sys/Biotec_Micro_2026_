@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Microbiología 2026 · ORT Uruguay</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Overpass:wght@300;400;500;600&family=Overpass+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#060908; --bg2:#0a0f0b; --surface:#0f1610; --surface2:#141d15;
+  --border:rgba(77,255,145,0.12); --glow:rgba(77,255,145,0.06);
+  --bio:#4dff91; --gram:#c77dff; --agar:#ff6b9d; --amber:#ffd166; --bio-dim:#1a7a3c;
+  --text:#d8edd9; --muted:#6b8f6e; --faint:#2c3d2e;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Overpass',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden}
+#scope-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse 90% 90% at 50% 50%,transparent 40%,rgba(6,9,8,.7) 80%,rgba(6,9,8,.97) 100%)}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:58px;background:rgba(6,9,8,.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.05rem;font-weight:600;letter-spacing:.12em;color:var(--bio);text-decoration:none;text-transform:uppercase}
+.nav-links{display:flex;gap:.1rem;list-style:none}
+.nav-links a{color:var(--muted);font-size:.77rem;font-weight:500;text-decoration:none;padding:.4rem .8rem;border-radius:6px;letter-spacing:.04em;transition:color .2s,background .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--bio);background:var(--glow)}
+.content{position:relative;z-index:2}
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:80px 3rem 5rem;max-width:1140px;margin:0 auto}
+.hero-tag{display:inline-flex;align-items:center;gap:.6rem;font-family:'Overpass Mono',monospace;font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;color:var(--bio);margin-bottom:2rem;opacity:0;animation:riseIn .7s .2s ease forwards}
+.hero-tag::before{content:'';display:block;width:28px;height:1px;background:var(--bio)}
+.hero-h1{font-family:'Cormorant Garamond',serif;font-size:clamp(4.5rem,11vw,9.5rem);font-weight:300;line-height:.9;letter-spacing:-.02em;margin-bottom:.2em;opacity:0;animation:riseIn .8s .35s ease forwards}
+.hero-h1 em{font-style:italic;background:linear-gradient(120deg,var(--bio) 0%,#a0ffcc 40%,var(--gram) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-year{display:block;font-size:.18em;font-style:normal;font-family:'Overpass Mono',monospace;letter-spacing:.35em;color:var(--muted);margin-top:.5em;-webkit-text-fill-color:var(--muted)}
+.hero-desc{max-width:520px;font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-style:italic;color:var(--muted);line-height:1.8;margin:2rem 0 2.5rem;opacity:0;animation:riseIn .7s .55s ease forwards}
+.hero-chips{display:flex;flex-wrap:wrap;gap:.625rem;opacity:0;animation:riseIn .7s .7s ease forwards}
+.chip{display:flex;align-items:center;gap:.5rem;border:1px solid var(--border);border-radius:100px;padding:.45rem 1rem;font-size:.78rem;color:var(--muted);background:rgba(77,255,145,.03)}
+.chip-dot{width:5px;height:5px;border-radius:50%;background:var(--bio);flex-shrink:0;box-shadow:0 0 6px var(--bio)}
+.hero-scroll{position:absolute;bottom:2.5rem;left:3rem;font-family:'Overpass Mono',monospace;font-size:.62rem;letter-spacing:.18em;color:var(--faint);text-transform:uppercase;display:flex;align-items:center;gap:.75rem;opacity:0;animation:riseIn .7s 1.1s forwards}
+.hero-scroll::after{content:'';display:block;width:50px;height:1px;background:linear-gradient(to right,var(--bio-dim),transparent);animation:bpulse 2.5s ease-in-out infinite}
+@keyframes bpulse{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes riseIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.petri-divider{display:flex;align-items:center;gap:1.5rem;padding:0 2.5rem;opacity:.35}
+.petri-divider::before,.petri-divider::after{content:'';flex:1;height:1px;background:linear-gradient(to right,transparent,var(--bio-dim),transparent)}
+.petri-circle{width:10px;height:10px;border-radius:50%;border:1px solid var(--bio-dim);box-shadow:0 0 8px rgba(77,255,145,.3);flex-shrink:0}
+section{padding:5.5rem 2.5rem;position:relative}
+.section-inner{max-width:1140px;margin:0 auto}
+.eyebrow{display:flex;align-items:center;gap:.75rem;font-family:'Overpass Mono',monospace;font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;color:var(--bio);margin-bottom:.75rem}
+.eyebrow::before{content:'';display:block;width:20px;height:1px;background:var(--bio)}
+.section-h2{font-family:'Cormorant Garamond',serif;font-size:clamp(2.2rem,4.5vw,3.6rem);font-weight:400;line-height:1.05;letter-spacing:-.01em;margin-bottom:3rem}
+.section-h2 em{font-style:italic;color:var(--bio)}
+.docentes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:20px;overflow:hidden}
+.docente-card{background:var(--surface);padding:2.25rem;transition:background .25s;position:relative;overflow:hidden}
+.docente-card::after{content:'';position:absolute;top:-60px;right:-60px;width:160px;height:160px;border-radius:50%;border:1px solid var(--border);opacity:0;transition:opacity .3s}
+.docente-card:hover{background:var(--surface2)}
+.docente-card:hover::after{opacity:1}
+.colony-avatar{width:56px;height:56px;border-radius:50%;position:relative;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:center}
+.colony-avatar::before{content:'';position:absolute;inset:-4px;border-radius:50%;border:1px solid currentColor;opacity:.2;animation:cpulse 3s ease-in-out infinite}
+.colony-avatar::after{content:'';position:absolute;inset:-9px;border-radius:50%;border:1px solid currentColor;opacity:.08;animation:cpulse 3s ease-in-out .5s infinite}
+@keyframes cpulse{0%,100%{transform:scale(1);opacity:.12}50%{transform:scale(1.05);opacity:.22}}
+.colony-initials{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:1.3rem;position:relative;z-index:1;color:var(--bg)}
+.docente-name{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:600;margin-bottom:.2rem}
+.docente-role{font-family:'Overpass Mono',monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--bio);margin-bottom:1.1rem}
+.docente-bio{font-family:'Cormorant Garamond',serif;font-size:1rem;font-style:italic;color:#5a7b5e;line-height:1.7;margin-bottom:1.5rem}
+.docente-links{display:flex;gap:.5rem}
+.dlink{display:flex;align-items:center;gap:.35rem;font-size:.72rem;color:var(--muted);text-decoration:none;border:1px solid var(--border);border-radius:6px;padding:.3rem .7rem;transition:all .2s;font-family:'Overpass Mono',monospace;letter-spacing:.04em}
+.dlink:hover{color:var(--bio);border-color:rgba(77,255,145,.35)}
+.dlink svg{width:11px;height:11px}
+.coord-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(77,255,145,.07);border:1px solid rgba(77,255,145,.2);border-radius:100px;padding:.18rem .65rem;font-family:'Overpass Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--bio);margin-bottom:.85rem}
+.modules-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:.875rem}
+.module-card{border:1px solid var(--border);border-radius:14px;padding:1.625rem;background:var(--surface);transition:all .25s;position:relative;overflow:hidden}
+.module-card:hover{background:var(--surface2);border-color:rgba(77,255,145,.22);transform:translateY(-2px)}
+.module-glyph{position:absolute;top:1.2rem;right:1.4rem;font-size:1.35rem;opacity:.25}
+.module-num{font-family:'Overpass Mono',monospace;font-size:.62rem;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:.5rem}
+.module-title{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:600;line-height:1.25;margin-bottom:.5rem}
+.module-sub{font-size:.78rem;color:var(--muted);line-height:1.5}
+.module-accent{color:var(--amber);font-weight:600}
+.obj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:.65rem}
+.obj-item{display:flex;gap:.875rem;align-items:flex-start;padding:.875rem 1.1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:.875rem;color:var(--muted);line-height:1.55;transition:all .2s}
+.obj-item:hover{border-color:rgba(77,255,145,.25);color:var(--text)}
+.obj-bullet{width:20px;height:20px;border-radius:50%;flex-shrink:0;border:1px solid var(--bio);display:flex;align-items:center;justify-content:center;margin-top:.05rem}
+.obj-bullet::after{content:'';width:5px;height:5px;border-radius:50%;background:var(--bio);box-shadow:0 0 6px var(--bio)}
+.tag-wrap{display:flex;flex-wrap:wrap;gap:.5rem}
+.tag{border:1px solid var(--border);border-radius:100px;padding:.3rem .875rem;background:var(--surface);transition:all .2s;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.9rem;color:var(--muted)}
+.tag:hover{border-color:rgba(77,255,145,.3);color:var(--bio)}
+.tag.skill{border-color:rgba(199,125,255,.18)}
+.tag.skill:hover{border-color:var(--gram);color:var(--gram)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start}
+.col-label{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:1rem;display:flex;align-items:center;gap:.75rem}
+.col-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.metodo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.metodo-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.75rem;transition:all .25s}
+.metodo-card:hover{background:var(--surface2)}
+.metodo-icon{font-size:2rem;margin-bottom:1.1rem;display:block}
+.metodo-title{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:600;margin-bottom:.5rem}
+.metodo-body{font-size:.85rem;color:var(--muted);line-height:1.65}
+.horarios-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.grupo-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.grupo-head{padding:.875rem 1.5rem;background:linear-gradient(135deg,rgba(77,255,145,.06),rgba(199,125,255,.06));border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.grupo-name{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:var(--bio)}
+.grupo-row{display:flex;justify-content:space-between;padding:.75rem 1.5rem;font-size:.875rem;border-bottom:1px solid rgba(77,255,145,.04)}
+.grupo-row:last-child{border-bottom:none}
+.hora{font-family:'Overpass Mono',monospace;color:var(--bio);font-size:.82rem}
+.cal-wrap{border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.cal-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.cal-table th{background:var(--surface2);padding:.8rem 1.25rem;text-align:left;font-family:'Overpass Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);font-weight:400}
+.cal-table td{padding:.65rem 1.25rem;border-bottom:1px solid rgba(77,255,145,.035);vertical-align:middle;color:var(--muted)}
+.cal-table tr:last-child td{border-bottom:none}
+.cal-table tr:hover td{background:rgba(77,255,145,.02)}
+.c-sem{font-family:'Overpass Mono',monospace;font-size:.65rem;color:var(--bio-dim);letter-spacing:.1em}
+.c-fecha{color:var(--text);font-weight:500;white-space:nowrap}
+.c-evento{color:var(--text)}
+.c-evento.special{color:var(--amber);font-weight:600}
+.c-evento.holiday{color:var(--muted);font-style:italic}
+.c-prep{font-size:.73rem;font-style:italic}
+.badge{display:inline-flex;align-items:center;padding:.12rem .5rem;border-radius:100px;font-family:'Overpass Mono',monospace;font-size:.6rem;letter-spacing:.05em}
+.b-teo{background:rgba(199,125,255,.12);color:#c77dff}
+.b-pra{background:rgba(77,255,145,.1);color:var(--bio)}
+.b-tal{background:rgba(255,107,157,.1);color:var(--agar)}
+.b-eva{background:rgba(255,209,102,.12);color:var(--amber)}
+.b-hol{background:rgba(107,143,110,.12);color:var(--muted)}
+.eval-list{display:grid;gap:.75rem}
+.eval-row{display:grid;grid-template-columns:3rem 1fr 5rem;gap:1.25rem;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1.5rem;transition:all .2s}
+.eval-row:hover{border-color:rgba(77,255,145,.22)}
+.eval-idx{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;color:rgba(77,255,145,.25);line-height:1}
+.eval-name{font-weight:500;font-size:.9rem}
+.eval-desc{font-size:.77rem;color:var(--muted);margin-top:.2rem}
+.eval-bar{height:2px;background:var(--border);border-radius:100px;margin-top:.5rem;overflow:hidden}
+.eval-bar-fill{height:100%;background:linear-gradient(to right,var(--bio),var(--gram));border-radius:100px;transition:width 1.2s ease}
+.eval-pts{text-align:right;font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--bio);line-height:1}
+.eval-pts span{display:block;font-size:.65rem;font-family:'Overpass';color:var(--muted);margin-top:.2rem}
+.eval-total{background:linear-gradient(135deg,rgba(77,255,145,.05),rgba(199,125,255,.05));border-color:rgba(77,255,145,.2)}
+.cond-list{display:grid;gap:.75rem}
+.cond-item{display:flex;gap:1.25rem;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.1rem 1.4rem;font-size:.875rem;color:var(--muted)}
+.cond-num{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--faint);line-height:1;flex-shrink:0}
+.rub-table{width:100%;border-collapse:collapse}
+.rub-table th{background:var(--surface2);padding:.8rem 1.5rem;text-align:left;font-family:'Overpass Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);font-weight:400}
+.rub-table td{padding:1rem 1.5rem;border-bottom:1px solid rgba(77,255,145,.035);vertical-align:top;font-size:.875rem}
+.rub-table td:first-child{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--text);white-space:nowrap;width:200px}
+.rub-table td:last-child{color:var(--muted)}
+.rub-table ul{list-style:none;display:flex;flex-direction:column;gap:.35rem}
+.rub-table li{display:flex;gap:.6rem;align-items:flex-start;line-height:1.5}
+.rub-table li::before{content:'·';color:var(--bio);flex-shrink:0;font-size:1.2rem;line-height:1}
+.biblio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem}
+.bib-cat{font-family:'Overpass Mono',monospace;font-size:.63rem;letter-spacing:.15em;text-transform:uppercase;color:var(--bio);margin-bottom:.875rem}
+.bib-item{display:flex;gap:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;margin-bottom:.5rem;transition:all .2s;font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--muted);line-height:1.6}
+.bib-item:hover{border-color:rgba(77,255,145,.2);color:var(--text)}
+.bib-ico{color:var(--bio);flex-shrink:0;margin-top:3px}
+.bib-link{color:var(--gram);text-decoration:none;font-size:.8rem;font-family:'Overpass Mono';display:block;margin-top:.2rem;letter-spacing:.04em}
+.bib-link:hover{text-decoration:underline}
+.nota{background:rgba(255,209,102,.05);border:1px solid rgba(255,209,102,.18);border-radius:10px;padding:1rem 1.4rem;font-size:.84rem;color:#a88a3a;display:flex;gap:.75rem;align-items:flex-start;margin-top:2rem}
+footer{border-top:1px solid var(--border);padding:2rem 2.5rem;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2}
+.footer-brand{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--bio);letter-spacing:.1em}
+.footer-info{font-size:.75rem;color:var(--muted);text-align:right;line-height:1.7}
+.reveal{opacity:0;transform:translateY(16px);transition:opacity .65s ease,transform .65s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+@media(max-width:768px){.two-col,.horarios-grid,.metodo-grid{grid-template-columns:1fr;gap:1rem}nav{padding:0 1.25rem}.nav-links{display:none}section{padding:3.5rem 1.25rem}.hero{padding:80px 1.25rem 4rem}.eval-row{grid-template-columns:2.5rem 1fr 3.5rem}.cal-table td:nth-child(4),.cal-table th:nth-child(4){display:none}}
+</style>
+</head>
+<body>
+<canvas id="scope-canvas"></canvas>
+<div class="vignette"></div>
+<nav>
+  <a href="#" class="nav-logo">Microbiología 2026</a>
+  <ul class="nav-links">
+    <li><a href="#docentes">Docentes</a></li>
+    <li><a href="#plan">Curso</a></li>
+    <li><a href="#modulos">Módulos</a></li>
+    <li><a href="#calendario">Calendario</a></li>
+    <li><a href="#evaluaciones">Evaluaciones</a></li>
+    <li><a href="#bibliografia">Bibliografía</a></li>
+  </ul>
+</nav>
+<div class="content">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Licenciatura e Ingeniería en Biotecnología · ORT Uruguay</div>
+  <h1 class="hero-h1">Micro<em>biología</em><span class="hero-year">2026 ─ ORT ─ 6398</span></h1>
+  <p class="hero-desc">Un recorrido por el mundo invisible: estructura celular, genómica, metabolismo, microbiota humana y aplicaciones biotecnológicas de vanguardia.</p>
+  <div class="hero-chips">
+    <div class="chip"><div class="chip-dot"></div>Código 6398 · Semestre 5/5</div>
+    <div class="chip"><div class="chip-dot"></div>Marzo – Julio 2026</div>
+    <div class="chip"><div class="chip-dot"></div>5 docentes · 2 grupos</div>
+    <div class="chip"><div class="chip-dot"></div>16 semanas · 8 módulos</div>
+  </div>
+  <div class="hero-scroll">observar · aprender · descubrir</div>
+</div>
+
+<div class="petri-divider"><div class="petri-circle"></div><div class="petri-circle"></div><div class="petri-circle"></div></div>
+
+<!-- DOCENTES -->
+<section id="docentes"><div class="section-inner">
+  <div class="eyebrow reveal">Equipo docente</div>
+  <h2 class="section-h2 reveal">Plantel <em>Docente</em></h2>
+  <div class="docentes-grid reveal">
+
+    <div class="docente-card">
+      <div class="coord-badge">· Coordina la materia</div>
+      <div class="colony-avatar" style="background:linear-gradient(135deg,#1a4d2e,#2d7a4a);color:var(--bio)"><span class="colony-initials">FM</span></div>
+      <div class="docente-name">Felipe Machado Casini</div>
+      <div class="docente-role">Ing. Biotecnología · ORT Uruguay</div>
+      <p class="docente-bio">Ingeniero en Biotecnología por ORT. Docente y coordinador del área de Biotecnología en ORT. Cofundador de Enteria, startup biotecnológica enfocada en soluciones microbiológicas de impacto global.</p>
+      <div class="docente-links">
+        <a href="mailto:machado@fi365.ort.edu.uy" class="dlink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg>Email</a>
+        <a href="https://uy.linkedin.com/in/felipe-machado-casini-9835167b" target="_blank" class="dlink"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>LinkedIn</a>
+      </div>
+    </div>
+
+    <div class="docente-card">
+      <div class="colony-avatar" style="background:linear-gradient(135deg,#1a1a4d,#3a2d7a);color:var(--gram)"><span class="colony-initials">EA</span></div>
+      <div class="docente-name">Erika Arbildi</div>
+      <div class="docente-role">Lic. Bioquímica · UdelaR</div>
+      <p class="docente-bio">Licenciada en Bioquímica por UdelaR. Ayudante en el Dpto. de Microbiología, Fac. Química. Investigadora del Laboratorio de Biotecnología (ORT). Trabaja en microbiología aplicada, biofilms y agentes antimicrobianos.</p>
+      <div class="docente-links">
+        <a href="mailto:eri.arbildi@gmail.com" class="dlink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg>Email</a>
+        <a href="https://uy.linkedin.com/in/erika-arbildi-ferreira-876841155" target="_blank" class="dlink"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>LinkedIn</a>
+      </div>
+    </div>
+
+    <div class="docente-card">
+      <div class="colony-avatar" style="background:linear-gradient(135deg,#4d1a2e,#7a2d4a);color:var(--agar)"><span class="colony-initials">CB</span></div>
+      <div class="docente-name">Catalina Baserga</div>
+      <div class="docente-role">Lab. Genómica Microbiana · Pasteur</div>
+      <p class="docente-bio">Vinculada al Laboratorio de Genómica Microbiana del Institut Pasteur de Montevideo. Su trabajo se enmarca en el estudio de comunidades microbianas y su aplicación en contextos biomédicos y biotecnológicos.</p>
+      <div class="docente-links">
+        <a href="mailto:cata.baserga@gmail.com" class="dlink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg>Email</a>
+        <a href="https://uy.linkedin.com/in/catalina-baserga-74852620b" target="_blank" class="dlink"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>LinkedIn</a>
+      </div>
+    </div>
+
+    <div class="docente-card">
+      <div class="colony-avatar" style="background:linear-gradient(135deg,#4d3a1a,#7a5a2d);color:var(--amber)"><span class="colony-initials">NR</span></div>
+      <div class="docente-name">Nadia Riera, PhD</div>
+      <div class="docente-role">Investigadora Adjunta Senior · Pasteur</div>
+      <p class="docente-bio">PhD e investigadora en el Lab. de Genómica Microbiana del Institut Pasteur de Montevideo. Posdoc en Boston Children's Hospital. Especialista en microbioma intestinal, resistencia a antibióticos y epidemiología molecular.</p>
+      <div class="docente-links">
+        <a href="mailto:nriera@pasteur.edu.uy" class="dlink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg>Email</a>
+        <a href="https://uy.linkedin.com/in/nadia-riera-a6155695" target="_blank" class="dlink"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>LinkedIn</a>
+      </div>
+    </div>
+
+    <div class="docente-card">
+      <div class="colony-avatar" style="background:linear-gradient(135deg,#0d3d2a,#1a6a4a);color:#4dffc8"><span class="colony-initials">DR</span></div>
+      <div class="docente-name">Diego M. Roldán</div>
+      <div class="docente-role">Dr. Ciencias Biológicas · IIBCE</div>
+      <p class="docente-bio">Doctor en Ciencias Biológicas, UdelaR. Integrante del IIBCE. Premio Nacional de Microbiología 2022. Experto en microbiología ambiental polar, metagenómica funcional y biología sintética antártica.</p>
+      <div class="docente-links">
+        <a href="mailto:droldan@fcien.edu.uy" class="dlink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg>Email</a>
+        <a href="https://uy.linkedin.com/in/diego-m-rold%C3%A1n-9910a3290" target="_blank" class="dlink"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>LinkedIn</a>
+      </div>
+    </div>
+
+  </div>
+</div></section>
+
+<div class="petri-divider"><div class="petri-circle"></div><div class="petri-circle"></div><div class="petri-circle"></div></div>
+
+<!-- PLAN -->
+<section id="plan"><div class="section-inner">
+  <div class="eyebrow reveal">Plan del curso</div>
+  <h2 class="section-h2 reveal">Descripción y <em>Objetivos</em></h2>
+  <p class="reveal" style="font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-style:italic;color:var(--muted);max-width:680px;line-height:1.85;margin-bottom:3rem">Brindamos a los estudiantes una comprensión integral de los microorganismos procariotas y fúngicos: su estructura, morfología, genética, metabolismo, diversidad y clasificación taxonómica, con especial énfasis en sus aplicaciones biotecnológicas.</p>
+  <div class="two-col reveal" style="margin-bottom:3.5rem">
+    <div><div class="col-label">Conceptos clave</div><div class="tag-wrap"><span class="tag">Crecimiento microbiano</span><span class="tag">Citología y morfología</span><span class="tag">Hongos y levaduras</span><span class="tag">Agentes antimicrobianos</span><span class="tag">Genética bacteriana</span><span class="tag">Secuenciación genómica</span><span class="tag">Diversidad y taxonomía</span><span class="tag">Ciclos biogeoquímicos</span><span class="tag">ETAs y fermentación</span><span class="tag">Microbiota humana</span><span class="tag">Eje intestino-cerebro</span><span class="tag">Metabolismo microbiano</span></div></div>
+    <div><div class="col-label">Habilidades</div><div class="tag-wrap"><span class="tag skill">Microscopía y tinción</span><span class="tag skill">Técnicas de laboratorio</span><span class="tag skill">Diseño experimental</span><span class="tag skill">Análisis de resultados</span><span class="tag skill">Comunicación científica</span><span class="tag skill">Lectura bibliográfica</span><span class="tag skill">Trabajo en equipo</span></div></div>
+  </div>
+  <div class="eyebrow reveal">Al finalizar el curso</div>
+  <div class="obj-grid reveal">
+    <div class="obj-item"><div class="obj-bullet"></div>Describir estructura celular de procariotas y eucariotas e identificarlos mediante tinción.</div>
+    <div class="obj-item"><div class="obj-bullet"></div>Comprender las condiciones ambientales y nutricionales que influyen en el crecimiento microbiano.</div>
+    <div class="obj-item"><div class="obj-bullet"></div>Explicar los mecanismos de acción de agentes antimicrobianos físicos y químicos.</div>
+    <div class="obj-item"><div class="obj-bullet"></div>Analizar la organización, expresión y transferencia del material genético en procariotas.</div>
+    <div class="obj-item"><div class="obj-bullet"></div>Clasificar microorganismos según criterios morfológicos, fisiológicos y genéticos.</div>
+    <div class="obj-item"><div class="obj-bullet"></div>Reconocer el papel de los microorganismos en los ciclos biogeoquímicos y los ecosistemas.</div>
+    <div class="obj-item"><div class="obj-bullet"></div>Identificar microorganismos involucrados en ETAs y procesos de fermentación.</div>
+    <div class="obj-item"><div class="obj-bullet"></div>Comprender la microbiota humana, el eje intestino-cerebro y sus moduladores.</div>
+    <div class="obj-item"><div class="obj-bullet"></div>Describir las principales rutas metabólicas para la obtención de energía en procariotas.</div>
+    <div class="obj-item"><div class="obj-bullet"></div>Aplicar el conocimiento microbiológico en contextos biotecnológicos de vanguardia.</div>
+  </div>
+</div></section>
+
+<div class="petri-divider"><div class="petri-circle"></div><div class="petri-circle"></div><div class="petri-circle"></div></div>
+
+<!-- MÓDULOS -->
+<section id="modulos"><div class="section-inner">
+  <div class="eyebrow reveal">Contenido</div>
+  <h2 class="section-h2 reveal">Módulos del <em>Curso</em></h2>
+  <div class="modules-wrap reveal">
+    <div class="module-card"><span class="module-glyph">🔵</span><div class="module-num">Módulo 01 · Sem. 1–2</div><div class="module-title">Introducción · Citología & Morfología · Crecimiento</div><div class="module-sub">Estructura celular procariota. Técnicas de tinción. Condiciones de crecimiento.</div></div>
+    <div class="module-card"><span class="module-glyph">🍄</span><div class="module-num">Módulo 02 · Sem. 3–4</div><div class="module-title">Microorganismos Eucariotas</div><div class="module-sub">Hongos filamentosos y levaduras. Reproducción sexual y asexual. Taller.</div></div>
+    <div class="module-card"><span class="module-glyph">🌿</span><div class="module-num">Módulo 03 · Sem. 4–5</div><div class="module-title">Diversidad & Taxonomía Microbiana</div><div class="module-sub">Clasificación filogenética. Criterios morfológicos, fisiológicos y genéticos. Taller.</div></div>
+    <div class="module-card"><span class="module-glyph">⚗️</span><div class="module-num">Módulo 04 · Sem. 5–7</div><div class="module-title">Agentes Antimicrobianos</div><div class="module-sub">Funcionalidad y mecanismos de acción de agentes físicos y químicos.</div></div>
+    <div class="module-card" style="border-color:rgba(255,209,102,.2)"><span class="module-glyph">🧬</span><div class="module-num">Módulo 05 · Sem. 7–9</div><div class="module-title">Genética & Genómica Bacteriana</div><div class="module-sub">Material genético en procariotas. Transferencia horizontal. Tecnologías de secuenciación.</div><div class="module-sub module-accent" style="margin-top:.5rem">⚡ Parcial al finalizar · 13 mayo</div></div>
+    <div class="module-card"><span class="module-glyph">⚡</span><div class="module-num">Módulo 06 · Sem. 10–11</div><div class="module-title">Metabolismo Microbiano</div><div class="module-sub">Rutas metabólicas para obtención de energía. Termodinámica de las reacciones.</div></div>
+    <div class="module-card"><span class="module-glyph">🧀</span><div class="module-num">Módulo 07 · Sem. 12–13</div><div class="module-title">Microbiología de los Alimentos</div><div class="module-sub">Enfermedades transmitidas por alimentos (ETAs). Producción de fermentados.</div></div>
+    <div class="module-card"><span class="module-glyph">🌍</span><div class="module-num">Módulo 08 · Sem. 13–15</div><div class="module-title">Microbiota Humana & Microbiología Ambiental</div><div class="module-sub">Eje intestino-cerebro. Moduladores de la microbiota. Ciclos biogeoquímicos.</div></div>
+  </div>
+  <div style="margin-top:4rem"><div class="eyebrow reveal">Metodología</div><div class="metodo-grid reveal"><div class="metodo-card"><span class="metodo-icon">🔬</span><div class="metodo-title">Clases Teóricas</div><p class="metodo-body">Exposición y discusión con diapositivas y videos. Se incentiva la profundización bibliográfica y la participación activa en el debate científico.</p></div><div class="metodo-card"><span class="metodo-icon">🧬</span><div class="metodo-title">Talleres</div><p class="metodo-body">Instancias participativas con preparación previa obligatoria sobre casos concretos de taxonomía y fisiología microbiana.</p></div></div></div>
+  <div style="margin-top:3.5rem"><div class="eyebrow reveal">Horarios por grupo</div><div class="horarios-grid reveal"><div class="grupo-card"><div class="grupo-head"><div class="grupo-name">Grupo M5A</div><div style="font-size:.72rem;color:var(--muted)">3 clases/sem · 2 h c/u</div></div><div class="grupo-row"><span>Lunes</span><span class="hora">12:00 – 14:00</span></div><div class="grupo-row"><span>Miércoles</span><span class="hora">12:00 – 14:00</span></div><div class="grupo-row"><span>Jueves</span><span class="hora">10:00 – 12:00</span></div></div><div class="grupo-card"><div class="grupo-head"><div class="grupo-name">Grupo M5B</div><div style="font-size:.72rem;color:var(--muted)">3 clases/sem · 2 h c/u</div></div><div class="grupo-row"><span>Miércoles</span><span class="hora">10:00 – 12:00</span></div><div class="grupo-row"><span>Jueves</span><span class="hora">12:00 – 14:00</span></div><div class="grupo-row"><span>Viernes</span><span class="hora">12:00 – 14:00</span></div></div></div>
+  <div class="nota reveal"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span><strong>Importante:</strong> entregas online hasta las 21:00 hs. Inscripción obligatoria en Gestión para parciales y obligatorios. El calendario es orientativo.</span></div></div>
+</div></section>
+
+<div class="petri-divider"><div class="petri-circle"></div><div class="petri-circle"></div><div class="petri-circle"></div></div>
+
+<!-- CALENDARIO -->
+<section id="calendario"><div class="section-inner">
+  <div class="eyebrow reveal">Cronograma</div>
+  <h2 class="section-h2 reveal">Calendario <em>2026</em> <span style="font-size:.42em;font-weight:300;color:var(--muted);font-style:normal"> · Grupo M5A · referencia</span></h2>
+  <div class="reveal" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem"><span class="badge b-tal">Taller</span><span class="badge b-eva">Evaluación</span><span class="badge b-hol">Feriado</span></div>
+  <div class="cal-wrap reveal"><table class="cal-table"><thead><tr><th>Sem.</th><th>Fecha</th><th>Clase · Tema</th><th>Preparación</th></tr></thead><tbody id="calBody"></tbody></table></div>
+</div></section>
+
+<div class="petri-divider"><div class="petri-circle"></div><div class="petri-circle"></div><div class="petri-circle"></div></div>
+
+<!-- EVALUACIONES -->
+<section id="evaluaciones"><div class="section-inner">
+  <div class="eyebrow reveal">Evaluaciones</div>
+  <h2 class="section-h2 reveal">Sistema de <em>Evaluación</em></h2>
+  <div class="eval-list reveal">
+    <div class="eval-row"><div class="eval-idx">1</div><div><div class="eval-name">Primer Parcial (13/05 - 15:00 hs)</div><div class="eval-desc">Módulos 1-5 · Preguntas abiertas, V/F y opción múltiple · presencial</div><div class="eval-bar"><div class="eval-bar-fill" data-w="30%"></div></div></div><div class="eval-pts">30<span>puntos</span></div></div>
+    <div class="eval-row"><div class="eval-idx">2</div><div><div class="eval-name">Segundo Parcial (06/07 - 18:30 hs)</div><div class="eval-desc">Todos los módulos del curso · Preguntas abiertas, V/F y opción múltiple</div><div class="eval-bar"><div class="eval-bar-fill" data-w="30%"></div></div></div><div class="eval-pts">30<span>puntos</span></div></div>
+    <div class="eval-row"><div class="eval-idx">3</div><div><div class="eval-name">Trabajo Obligatorio</div><div class="eval-desc">Aplicaciones biotecnológicas · Formato escrito y presentación oral grupal</div><div class="eval-bar"><div class="eval-bar-fill" data-w="30%"></div></div></div><div class="eval-pts">30<span>puntos</span></div></div>
+    <div class="eval-row"><div class="eval-idx">4</div><div><div class="eval-name">Actuación en Clase</div><div class="eval-desc">Talleres, participación activa y disposición hacia el aprendizaje</div><div class="eval-bar"><div class="eval-bar-fill" data-w="10%"></div></div></div><div class="eval-pts">10<span>puntos</span></div></div>
+    <div class="eval-row eval-total"><div class="eval-idx" style="color:var(--bio);font-size:1.6rem">Σ</div><div><div class="eval-name" style="font-weight:600">Total</div></div><div class="eval-pts">100<span>puntos</span></div></div>
+  </div>
+  <div style="margin-top:3rem"><div class="eyebrow reveal">Condiciones de aprobación</div><div class="cond-list reveal"><div class="cond-item"><div class="cond-num">1</div><div style="font-size:.875rem;color:var(--muted)">Obtener <strong style="color:var(--text)">70 puntos o más</strong> en el total. Si no se alcanza, hay derecho a una segunda instancia: exclusivamente la presentación oral del obligatorio.</div></div><div class="cond-item"><div class="cond-num">2</div><div style="font-size:.875rem;color:var(--muted)">No superar el límite de <strong style="color:var(--text)">3 faltas</strong> en las clases prácticas de laboratorio (asistencia obligatoria).</div></div><div class="cond-item"><div class="cond-num">3</div><div style="font-size:.875rem;color:var(--muted)">Inscribirse a través de <strong style="color:var(--text)">Gestión</strong> a las instancias obligatorias. Las entregas son online hasta las 21:00 hs.</div></div></div></div>
+  <div style="margin-top:3rem"><div class="eyebrow reveal">Rúbrica · Presentación oral obligatorio</div><div class="cal-wrap reveal"><table class="rub-table"><thead><tr><th>Criterio</th><th>El/la estudiante:</th></tr></thead><tbody><tr><td>Introducción</td><td><ul><li>Plantea una visión de lo general a lo específico del proyecto</li><li>Plantea la importancia del tema en el contexto biotecnológico</li></ul></td></tr><tr><td>Objetivos</td><td><ul><li>Plantea objetivo general y objetivos específicos claramente definidos</li></ul></td></tr><tr><td>Exposición y discusión</td><td><ul><li>Describe y explica los conceptos con precisión</li><li>Discute los contenidos y los compara con lo reportado en bibliografía</li><li>Concluye en base a los objetivos inicialmente planteados</li></ul></td></tr><tr><td>Lenguaje</td><td><ul><li>Usa lenguaje académico adecuado y responde correctamente las preguntas del tribunal</li></ul></td></tr></tbody></table></div></div>
+</div></section>
+
+<div class="petri-divider"><div class="petri-circle"></div><div class="petri-circle"></div><div class="petri-circle"></div></div>
+
+<!-- BIBLIOGRAFÍA -->
+<section id="bibliografia"><div class="section-inner">
+  <div class="eyebrow reveal">Recursos</div>
+  <h2 class="section-h2 reveal"><em>Bibliografía</em> Recomendada</h2>
+  <div class="biblio-grid reveal">
+    <div><div class="bib-cat">Básica · biblioteca FI</div><div class="bib-item"><span class="bib-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span>Prescott, Harley y Klein. <em>Microbiología</em> (Mc. Graw-Hill), 5.ª ed. en adelante.</span></div><div class="bib-item"><span class="bib-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span>Madigan et al. <em>Brock: Biología de los Microorganismos</em> (Pearson), 14.ª ed. en adelante.</span></div></div>
+    <div><div class="bib-cat">Complementaria</div><div class="bib-item"><span class="bib-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span>Tortora, Funke y Case. <em>Introducción a la Microbiología</em> (Médica Panamericana).</span></div><div class="bib-item"><span class="bib-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span>Artículos científicos seleccionados por los docentes para cada módulo (aula virtual).</span></div></div>
+    <div><div class="bib-cat">Sitios web</div><div class="bib-item"><span class="bib-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><div><div>MicrobeWorld – ASM</div><a href="https://www.microbeworld.org" class="bib-link" target="_blank">microbeworld.org ↗</a></div></div><div class="bib-item"><span class="bib-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><div><div>NCBI</div><a href="https://www.ncbi.nlm.nih.gov" class="bib-link" target="_blank">ncbi.nlm.nih.gov ↗</a></div></div><div class="bib-item"><span class="bib-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><div><div>Institut Pasteur de Montevideo</div><a href="https://pasteur.uy/laboratorios-g4/genomica-microbiana/" class="bib-link" target="_blank">pasteur.uy ↗</a></div></div></div>
+  </div>
+</div></section>
+
+</div>
+<footer><div class="footer-brand">Microbiología 2026</div><div class="footer-info">Licenciatura e Ingeniería en Biotecnología<br>Universidad ORT Uruguay · Código 6398 · Sem. 5</div></footer>
+
+<script>
+// MICROSCOPE CANVAS
+(function(){
+const canvas=document.getElementById('scope-canvas');
+const ctx=canvas.getContext('2d');
+let W,H,cells=[];
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight}
+function rndCell(){
+  const t=Math.random()<.5?'c':Math.random()<.6?'b':'s';
+  const pal=['#4dff91','#c77dff','#ff6b9d','#ffd166','#4dffc8'];
+  const col=pal[Math.floor(Math.random()*pal.length)];
+  return{t,col,x:Math.random()*W,y:Math.random()*H,r:Math.random()*4+2,len:Math.random()*18+8,ang:Math.random()*Math.PI*2,spd:(Math.random()-.5)*.15,vx:(Math.random()-.5)*.12,vy:(Math.random()-.5)*.08,al:Math.random()*.45+.1,ph:Math.random()*Math.PI*2,fl:Math.random()<.3}
+}
+function init(){resize();cells=[];const n=Math.floor(W*H/20000);for(let i=0;i<n;i++)cells.push(rndCell())}
+function dCoc(c){ctx.save();ctx.translate(c.x,c.y);const g=ctx.createRadialGradient(0,0,0,0,0,c.r*2.5);g.addColorStop(0,c.col+'aa');g.addColorStop(.5,c.col+'33');g.addColorStop(1,'transparent');ctx.beginPath();ctx.arc(0,0,c.r*2.5,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();ctx.beginPath();ctx.arc(0,0,c.r,0,Math.PI*2);ctx.fillStyle=c.col+'cc';ctx.fill();ctx.restore()}
+function dBac(c){ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.ang);ctx.shadowColor=c.col;ctx.shadowBlur=8;ctx.strokeStyle=c.col+'88';ctx.lineWidth=c.r*1.8;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-c.len/2,0);ctx.lineTo(c.len/2,0);ctx.stroke();ctx.shadowBlur=0;ctx.strokeStyle=c.col+'ee';ctx.lineWidth=c.r*.8;ctx.beginPath();ctx.moveTo(-c.len/2,0);ctx.lineTo(c.len/2,0);ctx.stroke();if(c.fl){ctx.strokeStyle=c.col+'55';ctx.lineWidth=.8;ctx.beginPath();for(let i=0;i<=1;i+=.05){const x=c.len/2+i*20,y=Math.sin(i*Math.PI*3+c.ph)*5;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.stroke()}ctx.restore()}
+function dSpi(c){ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.ang);ctx.shadowColor=c.col;ctx.shadowBlur=6;ctx.strokeStyle=c.col+'99';ctx.lineWidth=1.2;ctx.lineCap='round';ctx.beginPath();for(let i=0;i<=1;i+=.03){const x=(i-.5)*c.len*2,y=Math.sin(i*Math.PI*3+c.ph)*c.r*2.5;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.stroke();ctx.restore()}
+function tick(){ctx.clearRect(0,0,W,H);const now=Date.now();for(const c of cells){ctx.globalAlpha=c.al*(.8+.2*Math.sin(now*.001+c.ph));if(c.t==='c')dCoc(c);else if(c.t==='b')dBac(c);else dSpi(c);c.x+=c.vx;c.y+=c.vy;c.ang+=c.spd*.02;c.ph+=.008;if(c.x<-40)c.x=W+40;if(c.x>W+40)c.x=-40;if(c.y<-40)c.y=H+40;if(c.y>H+40)c.y=-40}ctx.globalAlpha=1;requestAnimationFrame(tick)}
+window.addEventListener('resize',()=>{resize();cells.forEach(c=>{c.x=Math.min(c.x,W);c.y=Math.min(c.y,H)})});
+init();tick();
+})();
+
+// CALENDAR
+const CAL=[
+  {s:'1',f:'9 Mar',e:'Introducción al curso',t:'teo',p:'Lectura del plan del curso'},
+  {s:'1',f:'11 Mar',e:'Citología y Morfología',t:'teo',p:''},
+  {s:'1',f:'12 Mar',e:'Citología y Morfología',t:'teo',p:''},
+  {s:'2',f:'16 Mar',e:'Citología y Morfología (continuación)',t:'teo',p:''},
+  {s:'2',f:'18 Mar',e:'Crecimiento y Nutrición',t:'teo',p:''},
+  {s:'2',f:'19 Mar',e:'Crecimiento y Nutrición',t:'teo',p:''},
+  {s:'3',f:'23 Mar',e:'Microorganismos Eucariotas',t:'teo',p:''},
+  {s:'3',f:'25 Mar',e:'Microorganismos Eucariotas',t:'teo',p:''},
+  {s:'3',f:'26 Mar',e:'Microorganismos Eucariotas',t:'teo',p:''},
+  {s:'—',f:'30 Mar – 3 Abr',e:'No hay clases · Turismo / Universidad cerrada',t:'hol',p:'—'},
+  {s:'4',f:'6 Abr',e:'Microorganismos Eucariotas – Taller',t:'tal',p:'Lectura previa del taller'},
+  {s:'4',f:'8 Abr',e:'Diversidad y Taxonomía',t:'teo',p:''},
+  {s:'4',f:'9 Abr',e:'Diversidad y Taxonomía',t:'teo',p:''},
+  {s:'5',f:'13 Abr',e:'Diversidad y Taxonomía (continuación)',t:'teo',p:''},
+  {s:'5',f:'15 Abr',e:'Diversidad y Taxonomía – Taller',t:'tal',p:'Lectura previa del taller'},
+  {s:'5',f:'16 Abr',e:'Agentes Antimicrobianos',t:'teo',p:''},
+  {s:'6',f:'20 Abr',e:'Agentes Antimicrobianos',t:'teo',p:''},
+  {s:'6',f:'22 Abr',e:'Agentes Antimicrobianos',t:'teo',p:''},
+  {s:'6',f:'23 Abr',e:'Agentes Antimicrobianos',t:'teo',p:''},
+  {s:'7',f:'27 Abr',e:'Agentes Antimicrobianos (continuación)',t:'teo',p:''},
+  {s:'7',f:'29 Abr',e:'Agentes Antimicrobianos',t:'teo',p:''},
+  {s:'7',f:'30 Abr',e:'Genética y Genómica Bacteriana',t:'teo',p:''},
+  {s:'—',f:'1 May',e:'Feriado · Universidad cerrada',t:'hol',p:'—'},
+  {s:'8',f:'4 May',e:'Genética y Genómica Bacteriana',t:'teo',p:''},
+  {s:'8',f:'6 May',e:'Genética y Genómica Bacteriana',t:'teo',p:''},
+  {s:'8',f:'7 May',e:'Genética y Genómica Bacteriana',t:'teo',p:''},
+  {s:'9',f:'11 May',e:'Repaso / Consultas',t:'teo',p:'Repaso previo al parcial'},
+  {s:'9',f:'13 May',e:'⚡ PARCIAL (15:00 hs)',t:'eva',p:'Inscripción en Gestión'},
+  {s:'9',f:'14 May',e:'Genética y Genómica Bacteriana',t:'teo',p:''},
+  {s:'10',f:'18 May',e:'Metabolismo Microbiano',t:'teo',p:''},
+  {s:'10',f:'20 May',e:'Metabolismo Microbiano',t:'teo',p:''},
+  {s:'10',f:'21 May',e:'Metabolismo Microbiano',t:'teo',p:''},
+  {s:'11',f:'25 May',e:'Metabolismo Microbiano (continuación)',t:'teo',p:''},
+  {s:'11',f:'27 May',e:'Metabolismo Microbiano',t:'teo',p:''},
+  {s:'11',f:'28 May',e:'Metabolismo Microbiano',t:'teo',p:''},
+  {s:'12',f:'1 Jun',e:'Microbiología de los Alimentos',t:'teo',p:''},
+  {s:'12',f:'3 Jun',e:'Microbiología de los Alimentos',t:'teo',p:''},
+  {s:'12',f:'4 Jun',e:'Microbiología de los Alimentos',t:'teo',p:''},
+  {s:'13',f:'8 Jun',e:'Microbiología de los Alimentos (continuación)',t:'teo',p:''},
+  {s:'13',f:'10 Jun',e:'Microbioma',t:'teo',p:''},
+  {s:'13',f:'11 Jun',e:'Microbioma',t:'teo',p:''},
+  {s:'14',f:'15 Jun',e:'Universidad cerrada',t:'hol',p:'—'},
+  {s:'14',f:'17 Jun',e:'Microbioma (continuación)',t:'teo',p:''},
+  {s:'14',f:'18 Jun',e:'Microbiología Ambiental',t:'teo',p:''},
+  {s:'15',f:'22 Jun',e:'Microbiología Ambiental',t:'teo',p:''},
+  {s:'15',f:'24 Jun',e:'Microbiología Ambiental',t:'teo',p:''},
+  {s:'15',f:'25 Jun',e:'Microbiología Ambiental',t:'teo',p:''},
+  {s:'16',f:'29 Jun',e:'Presentación de Obligatorios',t:'eva',p:'Inscripción en Gestión'},
+  {s:'16',f:'1 Jul',e:'Presentación de Obligatorios',t:'eva',p:''},
+  {s:'16',f:'2 Jul',e:'Repaso general',t:'teo',p:''},
+  {s:'16',f:'3 Jul',e:'Fin del Semestre',t:'eva',p:''},
+];
+const BG={tal:'<span class="badge b-tal">Taller</span>',eva:'<span class="badge b-eva">Evaluación</span>',hol:'<span class="badge b-hol">Feriado</span>'};
+const tb=document.getElementById('calBody');
+CAL.forEach(r=>{const tr=document.createElement('tr');const ec=r.t==='hol'?'c-evento holiday':(r.t==='eva'?'c-evento special':'c-evento');tr.innerHTML=`<td><span class="c-sem">${r.s}</span></td><td class="c-fecha">${r.f}</td><td><span class="${ec}">${r.e}</span> ${BG[r.t]||''}</td><td class="c-prep">${r.p}</td>`;tb.appendChild(tr)});
+
+// SCROLL REVEAL
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');e.target.querySelectorAll('.eval-bar-fill').forEach(b=>{b.style.width=b.dataset.w})}})},{threshold:.08});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+// ACTIVE NAV
+const secs=document.querySelectorAll('section[id]');
+const lnks=document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll',()=>{let cur='';secs.forEach(s=>{if(window.scrollY>=s.offsetTop-130)cur=s.id});lnks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+cur))},{passive:true});
+</script>
+</body>
+</html>
